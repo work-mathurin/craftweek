@@ -1,0 +1,4 @@
+project_id = "afwjxctaizfmwxflxtxb"
+
+[functions.generate-brain-reset]
+verify_jwt = false
