@@ -5,7 +5,8 @@ import { ServerLinkInput } from "./ServerLinkInput";
 import { PeriodToggle } from "./PeriodToggle";
 import { GenerateButton } from "./GenerateButton";
 import { SuccessState } from "./SuccessState";
-import { Brain } from "lucide-react";
+import { Brain, Key } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 type State = "idle" | "loading" | "success";
 type PeriodValue = 1 | 7 | 14 | 30;
@@ -17,6 +18,7 @@ interface SuccessData {
 
 export function BrainResetTool() {
   const [serverLink, setServerLink] = useState("");
+  const [apiToken, setApiToken] = useState("");
   const [period, setPeriod] = useState<PeriodValue>(7);
   const [state, setState] = useState<State>("idle");
   const [successData, setSuccessData] = useState<SuccessData | null>(null);
@@ -27,7 +29,11 @@ export function BrainResetTool() {
       return;
     }
 
-    // Validate the server link format
+    if (!apiToken.trim()) {
+      toast.error("Please enter your Craft API token");
+      return;
+    }
+
     if (!serverLink.includes("connect.craft.do/links/")) {
       toast.error("Please enter a valid Craft Connect link");
       return;
@@ -37,7 +43,11 @@ export function BrainResetTool() {
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-brain-reset", {
-        body: { serverLink: serverLink.trim(), days: period },
+        body: { 
+          serverLink: serverLink.trim(), 
+          apiToken: apiToken.trim(),
+          days: period 
+        },
       });
 
       if (error) {
@@ -91,7 +101,7 @@ export function BrainResetTool() {
       </div>
 
       {/* Form */}
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-md space-y-6">
         <div className="space-y-3">
           <label className="text-sm font-medium text-muted-foreground">
             Craft Server Link
@@ -104,6 +114,23 @@ export function BrainResetTool() {
           <p className="text-xs text-muted-foreground/70">
             Create a Connect link in Craft → Share → Generate Server Link
           </p>
+        </div>
+
+        <div className="space-y-3">
+          <label className="text-sm font-medium text-muted-foreground">
+            Craft API Token
+          </label>
+          <div className="relative">
+            <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              type="password"
+              placeholder="Your Craft API token"
+              value={apiToken}
+              onChange={(e) => setApiToken(e.target.value)}
+              disabled={state === "loading"}
+              className="pl-12 h-14 text-base bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 placeholder:text-muted-foreground/50"
+            />
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -122,7 +149,7 @@ export function BrainResetTool() {
       <GenerateButton
         onClick={handleGenerate}
         isLoading={state === "loading"}
-        disabled={!serverLink.trim()}
+        disabled={!serverLink.trim() || !apiToken.trim()}
       />
 
       {/* Subtle hint */}
