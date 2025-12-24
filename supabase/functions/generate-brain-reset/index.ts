@@ -5,12 +5,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const CRAFT_API_BASE = "https://connect.craft.do/links/EFwsgccmi0c/api/v1";
-
 interface DailyNote {
   id: string;
   date: string;
   content: string;
+}
+
+// Extract the API base URL from user-provided server URL
+function normalizeServerUrl(serverUrl: string): string {
+  let url = serverUrl.trim();
+  // Remove trailing slashes
+  url = url.replace(/\/+$/, '');
+  // Add /api/v1 if not present
+  if (!url.endsWith('/api/v1')) {
+    url = url + '/api/v1';
+  }
+  return url;
 }
 
 // Extract markdown content from Craft block structure
@@ -27,7 +37,7 @@ function extractMarkdown(block: any): string {
 }
 
 // Fetch daily notes for a date range
-async function fetchDailyNotes(craftToken: string, days: number): Promise<DailyNote[]> {
+async function fetchDailyNotes(apiBase: string, craftToken: string, days: number): Promise<DailyNote[]> {
   const notes: DailyNote[] = [];
   const today = new Date();
   
@@ -39,7 +49,7 @@ async function fetchDailyNotes(craftToken: string, days: number): Promise<DailyN
     try {
       console.log(`Fetching daily note for ${dateStr}...`);
       
-      const response = await fetch(`${CRAFT_API_BASE}/blocks?date=${dateStr}`, {
+      const response = await fetch(`${apiBase}/blocks?date=${dateStr}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${craftToken}`,
@@ -142,11 +152,11 @@ Be concise but insightful. Use bullet points. Focus on what matters.`
 }
 
 // Create a new document in Craft with the reflection
-async function createCraftDocument(craftToken: string, content: string): Promise<string> {
+async function createCraftDocument(apiBase: string, craftToken: string, content: string): Promise<string> {
   console.log("Creating document in Craft...");
   
   // First, try to create at today's date. If that fails (e.g., trashed), create at root
-  let response = await fetch(`${CRAFT_API_BASE}/blocks`, {
+  let response = await fetch(`${apiBase}/blocks`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${craftToken}`,
@@ -167,7 +177,7 @@ async function createCraftDocument(craftToken: string, content: string): Promise
     console.log("First attempt failed, trying without date position:", errorText);
     
     // Try creating as a new document without specific date positioning
-    response = await fetch(`${CRAFT_API_BASE}/blocks`, {
+    response = await fetch(`${apiBase}/blocks`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${craftToken}`,
@@ -200,7 +210,14 @@ serve(async (req) => {
   }
   
   try {
-    const { craftToken, days } = await req.json();
+    const { serverUrl, craftToken, days } = await req.json();
+    
+    if (!serverUrl) {
+      return new Response(
+        JSON.stringify({ error: "Craft server URL is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     if (!craftToken) {
       return new Response(
@@ -209,12 +226,13 @@ serve(async (req) => {
       );
     }
     
+    const apiBase = normalizeServerUrl(serverUrl);
     const periodDays = days === 14 ? 14 : 7;
     
-    console.log(`Starting brain reset for ${periodDays} days...`);
+    console.log(`Starting brain reset for ${periodDays} days using ${apiBase}...`);
     
     // Step 1: Fetch daily notes
-    const notes = await fetchDailyNotes(craftToken, periodDays);
+    const notes = await fetchDailyNotes(apiBase, craftToken, periodDays);
     
     if (notes.length === 0) {
       return new Response(
@@ -229,7 +247,7 @@ serve(async (req) => {
     const reflection = await generateReflection(notes);
     
     // Step 3: Create document in Craft
-    const craftUrl = await createCraftDocument(craftToken, reflection);
+    const craftUrl = await createCraftDocument(apiBase, craftToken, reflection);
     
     console.log("Brain reset complete!");
     

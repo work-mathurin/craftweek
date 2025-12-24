@@ -5,7 +5,8 @@ import { TokenInput } from "./TokenInput";
 import { PeriodToggle } from "./PeriodToggle";
 import { GenerateButton } from "./GenerateButton";
 import { SuccessState } from "./SuccessState";
-import { Brain } from "lucide-react";
+import { Brain, Link } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 type State = "idle" | "loading" | "success";
 
@@ -15,12 +16,17 @@ interface SuccessData {
 }
 
 export function BrainResetTool() {
+  const [serverUrl, setServerUrl] = useState("");
   const [token, setToken] = useState("");
   const [period, setPeriod] = useState<7 | 14>(7);
   const [state, setState] = useState<State>("idle");
   const [successData, setSuccessData] = useState<SuccessData | null>(null);
 
   const handleGenerate = async () => {
+    if (!serverUrl.trim()) {
+      toast.error("Please enter your Craft server link");
+      return;
+    }
     if (!token.trim()) {
       toast.error("Please enter your Craft API token");
       return;
@@ -30,7 +36,7 @@ export function BrainResetTool() {
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-brain-reset", {
-        body: { craftToken: token.trim(), days: period },
+        body: { serverUrl: serverUrl.trim(), craftToken: token.trim(), days: period },
       });
 
       if (error) {
@@ -84,7 +90,24 @@ export function BrainResetTool() {
       </div>
 
       {/* Form */}
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-md space-y-6">
+        <div className="space-y-3">
+          <label className="text-sm font-medium text-muted-foreground">
+            Craft Server Link
+          </label>
+          <div className="relative">
+            <Link className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              type="url"
+              placeholder="https://connect.craft.do/links/..."
+              value={serverUrl}
+              onChange={(e) => setServerUrl(e.target.value)}
+              disabled={state === "loading"}
+              className="pl-12 h-14 text-lg bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 placeholder:text-muted-foreground/50"
+            />
+          </div>
+        </div>
+
         <div className="space-y-3">
           <label className="text-sm font-medium text-muted-foreground">
             Craft API Token
@@ -112,7 +135,7 @@ export function BrainResetTool() {
       <GenerateButton
         onClick={handleGenerate}
         isLoading={state === "loading"}
-        disabled={!token.trim()}
+        disabled={!serverUrl.trim() || !token.trim()}
       />
 
       {/* Subtle hint */}
