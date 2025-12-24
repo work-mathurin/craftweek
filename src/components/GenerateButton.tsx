@@ -15,21 +15,20 @@ export function GenerateButton({ onClick, isLoading, disabled }: GenerateButtonP
       disabled={disabled || isLoading}
       size="lg"
       className={cn(
-        "relative h-16 px-10 text-lg font-medium rounded-2xl",
-        "bg-primary hover:bg-primary/90",
-        "transition-all duration-300",
-        "glow-primary hover:glow-intense",
-        "disabled:opacity-50 disabled:cursor-not-allowed disabled:glow-none"
+        "h-14 px-8 text-base font-medium rounded-xl",
+        "bg-primary hover:bg-primary/90 text-primary-foreground",
+        "shadow-soft hover:shadow-card transition-all duration-200",
+        "disabled:opacity-50 disabled:cursor-not-allowed"
       )}
     >
       {isLoading ? (
         <>
-          <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
           Generating...
         </>
       ) : (
         <>
-          <Sparkles className="mr-3 h-5 w-5" />
+          <Sparkles className="mr-2 h-5 w-5" />
           Generate Weekly Brain Reset
         </>
       )}

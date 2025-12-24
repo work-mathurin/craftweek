@@ -28,7 +28,7 @@ export function PeriodToggle({ value, onChange, disabled }: PeriodToggleProps) {
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <div className="flex items-center justify-center gap-2 p-1 bg-secondary/30 rounded-full flex-wrap">
+      <div className="flex items-center justify-center gap-2 p-1 bg-secondary rounded-lg flex-wrap">
         {[7, 14, 30].map((days) => (
           <button
             key={days}
@@ -36,10 +36,10 @@ export function PeriodToggle({ value, onChange, disabled }: PeriodToggleProps) {
             onClick={() => handlePresetClick(days)}
             disabled={disabled}
             className={cn(
-              "px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300",
+              "px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
               value === days && !isCustom
-                ? "bg-primary text-primary-foreground shadow-lg glow-primary"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-primary text-primary-foreground shadow-soft"
+                : "text-muted-foreground hover:text-foreground hover:bg-background",
               disabled && "opacity-50 cursor-not-allowed"
             )}
           >
@@ -54,10 +54,10 @@ export function PeriodToggle({ value, onChange, disabled }: PeriodToggleProps) {
           }}
           disabled={disabled}
           className={cn(
-            "px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300",
+            "px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
             isCustom
-              ? "bg-primary text-primary-foreground shadow-lg glow-primary"
-              : "text-muted-foreground hover:text-foreground",
+              ? "bg-primary text-primary-foreground shadow-soft"
+              : "text-muted-foreground hover:text-foreground hover:bg-background",
             disabled && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -74,7 +74,7 @@ export function PeriodToggle({ value, onChange, disabled }: PeriodToggleProps) {
             value={customValue || value}
             onChange={handleCustomChange}
             disabled={disabled}
-            className="w-20 h-10 text-center bg-secondary/50 border-border/50"
+            className="w-20 h-10 text-center bg-background border-border"
             placeholder="1-30"
           />
           <span className="text-sm text-muted-foreground">days</span>

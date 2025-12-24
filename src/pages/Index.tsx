@@ -1,45 +1,53 @@
 import { BrainResetTool } from "@/components/BrainResetTool";
+import { HowItWorks } from "@/components/HowItWorks";
+import { WhyUseCraftWeek } from "@/components/WhyUseCraftWeek";
+import { OutputExplanation } from "@/components/OutputExplanation";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   return (
     <>
       {/* SEO */}
-      <title>Weekly Brain Reset for Craft</title>
+      <title>CraftWeek - Weekly Brain Reset for Craft</title>
       <meta
         name="description"
-        content="Turn your Craft daily notes into a clear weekly reflection. AI-powered insights from your week's thinking."
+        content="Turn your Craft daily notes into a clear, structured weekly reflection. AI-powered insights from your week's thinking."
       />
 
-      {/* Background effects */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {/* Gradient orbs */}
-        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-        
-        {/* Subtle grid */}
-        <div 
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px),
-                              linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px',
-          }}
-        />
-      </div>
+      {/* Hero Section */}
+      <main className="min-h-screen">
+        <section className="py-20 px-6">
+          <div className="max-w-xl mx-auto text-center">
+            {/* Header */}
+            <div className="mb-12 animate-fade-in">
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+                CraftWeek
+              </h1>
+              <p className="text-xl text-muted-foreground mb-2">
+                From daily notes to weekly clarity
+              </p>
+              <p className="text-muted-foreground">
+                Turn your Craft daily notes into a clear, structured weekly reflection.
+              </p>
+            </div>
 
-      {/* Main content */}
-      <main className="relative min-h-screen flex items-center justify-center px-6 py-16">
-        <div className="w-full max-w-xl">
-          <BrainResetTool />
-        </div>
+            {/* Tool */}
+            <BrainResetTool />
+          </div>
+        </section>
+
+        {/* How It Works */}
+        <HowItWorks />
+
+        {/* Why Use CraftWeek */}
+        <WhyUseCraftWeek />
+
+        {/* Output Explanation */}
+        <OutputExplanation />
+
+        {/* Footer */}
+        <Footer />
       </main>
-
-      {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 p-6 text-center">
-        <p className="text-xs text-muted-foreground/50">
-          Craft is the source. Craft is the destination.
-        </p>
-      </footer>
     </>
   );
 };
