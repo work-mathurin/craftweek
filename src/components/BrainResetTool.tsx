@@ -3,10 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TokenInput } from "./TokenInput";
 import { PeriodToggle } from "./PeriodToggle";
-import { GenerateButton } from "./GenerateButton";
 import { SuccessState } from "./SuccessState";
-import { Link } from "lucide-react";
+import { Link, Sparkles, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 type State = "idle" | "loading" | "success";
 
@@ -68,60 +68,54 @@ export function BrainResetTool() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-8">
-      {/* Form Card */}
-      <div className="w-full bg-card rounded-2xl p-8 shadow-card">
-        <div className="space-y-6">
-          {/* Server URL Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Craft Server Link
-            </label>
-            <div className="relative">
-              <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="url"
-                placeholder="https://connect.craft.do/links/..."
-                value={serverUrl}
-                onChange={(e) => setServerUrl(e.target.value)}
-                disabled={state === "loading"}
-                className="pl-10 h-12 bg-background border-border focus:border-primary focus:ring-primary/20 placeholder:text-muted-foreground/50"
-              />
-            </div>
-          </div>
-
-          {/* Token Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Craft API Token
-            </label>
-            <TokenInput
-              value={token}
-              onChange={setToken}
-              disabled={state === "loading"}
-            />
-          </div>
-
-          {/* Period Toggle */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground text-center block">
-              Period
-            </label>
-            <PeriodToggle
-              value={period}
-              onChange={setPeriod}
-              disabled={state === "loading"}
-            />
-          </div>
+    <div className="flex flex-col items-center gap-10 w-full max-w-2xl mx-auto">
+      {/* Inline Server URL + Button */}
+      <div className="w-full flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Input
+            type="url"
+            placeholder="Paste Craft server link"
+            value={serverUrl}
+            onChange={(e) => setServerUrl(e.target.value)}
+            disabled={state === "loading"}
+            className="h-14 px-6 text-base bg-card border-0 shadow-input rounded-full placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/20"
+          />
         </div>
+        <Button
+          onClick={handleGenerate}
+          disabled={!serverUrl.trim() || !token.trim() || state === "loading"}
+          size="lg"
+          className="h-14 px-8 text-base font-medium rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-soft transition-all duration-200 disabled:opacity-50"
+        >
+          {state === "loading" ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Sparkles className="mr-2 h-5 w-5" />
+              Generate Reset
+            </>
+          )}
+        </Button>
       </div>
 
-      {/* Action Button */}
-      <GenerateButton
-        onClick={handleGenerate}
-        isLoading={state === "loading"}
-        disabled={!serverUrl.trim() || !token.trim()}
-      />
+      {/* Token & Period in a subtle row */}
+      <div className="w-full flex flex-col sm:flex-row gap-4 items-center justify-center">
+        <div className="w-full sm:w-72">
+          <TokenInput
+            value={token}
+            onChange={setToken}
+            disabled={state === "loading"}
+          />
+        </div>
+        <PeriodToggle
+          value={period}
+          onChange={setPeriod}
+          disabled={state === "loading"}
+        />
+      </div>
 
       {/* Loading hint */}
       {state === "loading" && (
