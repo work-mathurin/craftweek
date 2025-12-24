@@ -157,63 +157,55 @@ Be concise but insightful. Use bullet points. Focus on what matters.`
 }
 
 // Create a new document in Craft with the reflection
-async function createCraftDocument(apiBase: string, apiToken: string, content: string): Promise<string> {
-  console.log("Creating document in Craft...");
-  
-  // Use the correct Craft API format with blocks array
-  const response = await fetch(`${apiBase}/blocks`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      blocks: [
-        {
-          type: "textBlock",
-          style: "body",
-          content: content
-        }
-      ]
-    }),
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Craft API error:", errorText);
-    
-    // Fallback: try with markdown format
-    console.log("Trying with markdown format...");
-    const fallbackResponse = await fetch(`${apiBase}/blocks`, {
-      method: 'POST',
+async function createCraftDocument(
+  apiBase: string,
+  apiToken: string,
+  markdown: string,
+  targetDate: string
+): Promise<string> {
+  console.log("Creating document in Craft...", { targetDate });
+
+  // Craft API expects either { markdown, position } or { blocks, position }.
+  // We use the markdown variant and always provide a date position.
+  const tryCreate = async (date: string) => {
+    const res = await fetch(`${apiBase}/blocks`, {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${apiToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        blocks: [
-          {
-            markdown: content
-          }
-        ]
+        markdown,
+        position: {
+          position: "end",
+          date,
+        },
       }),
     });
-    
-    if (!fallbackResponse.ok) {
-      const fallbackError = await fallbackResponse.text();
-      console.error("Craft API fallback error:", fallbackError);
-      throw new Error(`Failed to create document: ${fallbackResponse.status}`);
-    }
-    
-    const fallbackResult = await fallbackResponse.json();
-    console.log("Document created (fallback):", fallbackResult);
-    const blockId = fallbackResult.items?.[0]?.id || fallbackResult.id;
-    return `craftdocs://open?blockId=${blockId}`;
+
+    return res;
+  };
+
+  // Prefer inserting into the most recent day that we actually found content for.
+  let response = await tryCreate(targetDate);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Craft API error (targetDate):", errorText);
+
+    // Fallback to "today" (Craft accepts this) in case the found date can't be used.
+    response = await tryCreate("today");
   }
-  
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Craft API error (today fallback):", errorText);
+    throw new Error(`Failed to create document: ${response.status}`);
+  }
+
   const result = await response.json();
   console.log("Document created:", result);
-  
+
   const blockId = result.items?.[0]?.id || result.id;
   return `craftdocs://open?blockId=${blockId}`;
 }
@@ -268,8 +260,9 @@ serve(async (req) => {
     const reflection = await generateReflection(notes, periodDays);
     
     // Step 3: Create document in Craft
-    const craftUrl = await createCraftDocument(apiBase, apiToken, reflection);
-    
+    const targetDate = notes.reduce((max, n) => (n.date > max ? n.date : max), notes[0].date);
+    const craftUrl = await createCraftDocument(apiBase, apiToken, reflection, targetDate);
+
     console.log("Brain reset complete!");
     
     return new Response(
