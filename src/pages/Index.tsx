@@ -3,7 +3,33 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { WhyUseCraftWeek } from "@/components/WhyUseCraftWeek";
 import { OutputExplanation } from "@/components/OutputExplanation";
 import { Footer } from "@/components/Footer";
-import { FileText, Calendar } from "lucide-react";
+import { FileText, Calendar, Sparkles, Brain, Lightbulb, CheckCircle2, Layers } from "lucide-react";
+
+const CraftLogo = () => (
+  <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-primary">
+    <path 
+      d="M12 2L2 7L12 12L22 7L12 2Z" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <path 
+      d="M2 17L12 22L22 17" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <path 
+      d="M2 12L12 17L22 12" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 const Index = () => {
   return (
@@ -17,14 +43,44 @@ const Index = () => {
 
       <main className="min-h-screen relative overflow-hidden">
         {/* Floating Icons */}
-        <div className="absolute left-[10%] top-[30%] hidden lg:block animate-float">
+        <div className="absolute left-[8%] top-[25%] hidden lg:block animate-float">
           <div className="w-16 h-16 bg-card rounded-2xl shadow-card flex items-center justify-center">
             <FileText className="h-8 w-8 text-primary" />
           </div>
         </div>
-        <div className="absolute right-[10%] top-[25%] hidden lg:block animate-float-delayed">
+        <div className="absolute right-[8%] top-[20%] hidden lg:block animate-float-delayed">
           <div className="w-16 h-16 bg-card rounded-2xl shadow-card flex items-center justify-center">
             <Calendar className="h-8 w-8 text-primary" />
+          </div>
+        </div>
+        <div className="absolute left-[5%] top-[55%] hidden lg:block animate-float-delayed">
+          <div className="w-14 h-14 bg-card rounded-2xl shadow-card flex items-center justify-center">
+            <CraftLogo />
+          </div>
+        </div>
+        <div className="absolute right-[6%] top-[50%] hidden lg:block animate-float">
+          <div className="w-14 h-14 bg-card rounded-2xl shadow-card flex items-center justify-center">
+            <Brain className="h-7 w-7 text-primary" />
+          </div>
+        </div>
+        <div className="absolute left-[15%] top-[70%] hidden lg:block animate-float">
+          <div className="w-12 h-12 bg-card rounded-xl shadow-card flex items-center justify-center">
+            <Sparkles className="h-6 w-6 text-primary" />
+          </div>
+        </div>
+        <div className="absolute right-[12%] top-[65%] hidden lg:block animate-float-delayed">
+          <div className="w-12 h-12 bg-card rounded-xl shadow-card flex items-center justify-center">
+            <Lightbulb className="h-6 w-6 text-primary" />
+          </div>
+        </div>
+        <div className="absolute left-[3%] top-[40%] hidden xl:block animate-float-delayed">
+          <div className="w-10 h-10 bg-card rounded-xl shadow-card flex items-center justify-center">
+            <CheckCircle2 className="h-5 w-5 text-primary" />
+          </div>
+        </div>
+        <div className="absolute right-[3%] top-[38%] hidden xl:block animate-float">
+          <div className="w-10 h-10 bg-card rounded-xl shadow-card flex items-center justify-center">
+            <Layers className="h-5 w-5 text-primary" />
           </div>
         </div>
 
