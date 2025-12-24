@@ -242,14 +242,6 @@ DOCUMENT STRUCTURE (use exactly this format):
 
 **${periodLabel}**
 
-## 🧭 Weekly Overview
-
-Based on the notes, assess these three dimensions using filled/empty circles (use 1-5 scale):
-
-**Energy:** ⚡⚡⚡⚪⚪  
-**Focus:** 🎯🎯🎯🎯⚪  
-**Clarity:** 🧠🧠🧠⚪⚪  
-
 ## 🎯 What Dominated My Week
 Identify 3–5 dominant themes or focus areas from this period. Be specific and grounded in the actual content.
 
@@ -285,7 +277,6 @@ TONE & STYLE:
 - Concise but meaningful—every line should add value
 - Use bullet points for clarity
 - Avoid repetition across sections
-- For the Weekly Overview, infer energy/focus/clarity from the tone and content of the notes
 - For One Thing That Mattered Most, identify the core thread that everything else connects to
 - Leave Weekly Closure prompts empty for the user to fill in
 - This is a personal thinking tool, not content for others`
