@@ -5,6 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const CRAFT_API_BASE = "https://connect.craft.do/links/EFwsgccmi0c/api/v1";
+
 interface DailyNote {
   id: string;
   date: string;
@@ -24,23 +26,8 @@ function extractMarkdown(block: any): string {
   return content;
 }
 
-// Normalize the server link to get the base API URL
-function normalizeServerLink(serverLink: string): string {
-  let url = serverLink.trim().replace(/\/+$/, '');
-  
-  if (!url.endsWith('/api/v1')) {
-    if (url.endsWith('/api')) {
-      url += '/v1';
-    } else {
-      url += '/api/v1';
-    }
-  }
-  
-  return url;
-}
-
 // Fetch daily notes for a date range
-async function fetchDailyNotes(apiBase: string, apiToken: string, days: number): Promise<DailyNote[]> {
+async function fetchDailyNotes(craftToken: string, days: number): Promise<DailyNote[]> {
   const notes: DailyNote[] = [];
   const today = new Date();
   
@@ -52,10 +39,10 @@ async function fetchDailyNotes(apiBase: string, apiToken: string, days: number):
     try {
       console.log(`Fetching daily note for ${dateStr}...`);
       
-      const response = await fetch(`${apiBase}/blocks?date=${dateStr}`, {
+      const response = await fetch(`${CRAFT_API_BASE}/blocks?date=${dateStr}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${apiToken}`,
+          'Authorization': `Bearer ${craftToken}`,
           'Accept': 'application/json',
         },
       });
@@ -83,8 +70,8 @@ async function fetchDailyNotes(apiBase: string, apiToken: string, days: number):
   return notes;
 }
 
-// Generate reflection using AI
-async function generateReflection(notes: DailyNote[], days: number): Promise<string> {
+// Generate weekly reflection using AI
+async function generateReflection(notes: DailyNote[]): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   
   if (!LOVABLE_API_KEY) {
@@ -96,9 +83,7 @@ async function generateReflection(notes: DailyNote[], days: number): Promise<str
     .map(n => `## ${n.date}\n${n.content}`)
     .join('\n\n---\n\n');
   
-  const periodLabel = days === 1 ? "daily" : days <= 7 ? "weekly" : days <= 14 ? "bi-weekly" : "monthly";
-  
-  console.log(`Generating AI ${periodLabel} reflection...`);
+  console.log("Generating AI reflection...");
   
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -111,14 +96,14 @@ async function generateReflection(notes: DailyNote[], days: number): Promise<str
       messages: [
         {
           role: "system",
-          content: `You are a thoughtful assistant helping a knowledge worker reflect on their ${periodLabel} notes. 
-Analyze their daily notes and create a structured ${periodLabel} reflection document.
+          content: `You are a thoughtful assistant helping a knowledge worker reflect on their week. 
+Analyze their daily notes and create a structured weekly reflection document.
 
 Your output should be in Markdown format with these exact sections:
-# ${days === 1 ? 'Daily' : days <= 7 ? 'Weekly' : days <= 14 ? 'Bi-Weekly' : 'Monthly'} Brain Reset
+# Weekly Brain Reset
 
 ## 🎯 Key Themes
-Identify ${days === 1 ? '2-3' : '3-5'} recurring themes, topics, or focus areas.
+Identify 3-5 recurring themes, topics, or focus areas from the week.
 
 ## ✅ Decisions Made
 List important decisions that were made or conclusions that were reached.
@@ -127,16 +112,16 @@ List important decisions that were made or conclusions that were reached.
 Identify unfinished tasks, pending items, or things that need follow-up.
 
 ## ⚡ Next Actions
-Suggest ${days === 1 ? '2-3' : '3-5'} concrete next actions based on the content.
+Suggest 3-5 concrete next actions based on the content.
 
 ## 💡 Insights & Patterns
-Share any interesting patterns, insights, or observations.
+Share any interesting patterns, insights, or observations about the week.
 
 Be concise but insightful. Use bullet points. Focus on what matters.`
         },
         {
           role: "user",
-          content: `Here are my daily notes from the past ${days} day${days > 1 ? 's' : ''}. Please create a ${periodLabel} reflection:\n\n${combinedContent}`
+          content: `Here are my daily notes from the past week. Please create a weekly reflection:\n\n${combinedContent}`
         }
       ],
     }),
@@ -157,124 +142,79 @@ Be concise but insightful. Use bullet points. Focus on what matters.`
 }
 
 // Create a new document in Craft with the reflection
-async function createCraftDocument(
-  apiBase: string,
-  apiToken: string,
-  markdownContent: string,
-  targetDate: string
-): Promise<string> {
-  console.log("Creating document in Craft...", { targetDate });
-
-  // Split markdown into lines and create text blocks for each paragraph/section
-  const lines = markdownContent.split('\n').filter(line => line.trim());
+async function createCraftDocument(craftToken: string, content: string): Promise<string> {
+  console.log("Creating document in Craft...");
   
-  // Create blocks with proper "type": "text" structure
-  const blocks = lines.map(line => ({
-    type: "text" as const,
-    content: line,
-  }));
-
-  // Try creating with blocks array first (simpler format without position)
-  const tryCreate = async () => {
-    // First attempt: simple blocks array
-    let res = await fetch(`${apiBase}/blocks`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ blocks }),
-    });
-
-    if (!res.ok) {
-      const err1 = await res.text();
-      console.error("Craft API error (blocks array):", err1);
-
-      // Second attempt: with position using datePosition
-      res = await fetch(`${apiBase}/blocks`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          blocks,
-          position: { type: "datePosition", date: targetDate },
-        }),
-      });
-    }
-
-    if (!res.ok) {
-      const err2 = await res.text();
-      console.error("Craft API error (datePosition):", err2);
-
-      // Third attempt: single text block
-      res = await fetch(`${apiBase}/blocks`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          blocks: [{ type: "text", content: markdownContent }],
-        }),
-      });
-    }
-
-    return res;
-  };
-
-  const response = await tryCreate();
-
+  // First, try to create at today's date. If that fails (e.g., trashed), create at root
+  let response = await fetch(`${CRAFT_API_BASE}/blocks`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${craftToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      markdown: content,
+      position: {
+        position: "end",
+        date: "today"
+      }
+    }),
+  });
+  
+  // If today's note is trashed or unavailable, try creating without date positioning
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Craft API final error:", errorText);
+    console.log("First attempt failed, trying without date position:", errorText);
+    
+    // Try creating as a new document without specific date positioning
+    response = await fetch(`${CRAFT_API_BASE}/blocks`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${craftToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        markdown: content
+      }),
+    });
+  }
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Craft API error:", errorText);
     throw new Error(`Failed to create document: ${response.status}`);
   }
-
+  
   const result = await response.json();
   console.log("Document created:", result);
-
+  
+  // Return a deep link to open Craft
   const blockId = result.items?.[0]?.id || result.id;
   return `craftdocs://open?blockId=${blockId}`;
 }
 
 serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
   
   try {
-    const { serverLink, apiToken, days } = await req.json();
+    const { craftToken, days } = await req.json();
     
-    if (!serverLink) {
-      return new Response(
-        JSON.stringify({ error: "Craft server link is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    if (!apiToken) {
+    if (!craftToken) {
       return new Response(
         JSON.stringify({ error: "Craft API token is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    if (!serverLink.includes("connect.craft.do/links/")) {
-      return new Response(
-        JSON.stringify({ error: "Invalid Craft Connect link format" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const periodDays = days === 14 ? 14 : 7;
     
-    const apiBase = normalizeServerLink(serverLink);
-    const periodDays = [1, 7, 14, 30].includes(days) ? days : 7;
-    
-    console.log(`Starting brain reset for ${periodDays} days using ${apiBase}...`);
+    console.log(`Starting brain reset for ${periodDays} days...`);
     
     // Step 1: Fetch daily notes
-    const notes = await fetchDailyNotes(apiBase, apiToken, periodDays);
+    const notes = await fetchDailyNotes(craftToken, periodDays);
     
     if (notes.length === 0) {
       return new Response(
@@ -286,12 +226,11 @@ serve(async (req) => {
     console.log(`Found ${notes.length} daily notes`);
     
     // Step 2: Generate reflection with AI
-    const reflection = await generateReflection(notes, periodDays);
+    const reflection = await generateReflection(notes);
     
     // Step 3: Create document in Craft
-    const targetDate = notes.reduce((max, n) => (n.date > max ? n.date : max), notes[0].date);
-    const craftUrl = await createCraftDocument(apiBase, apiToken, reflection, targetDate);
-
+    const craftUrl = await createCraftDocument(craftToken, reflection);
+    
     console.log("Brain reset complete!");
     
     return new Response(
