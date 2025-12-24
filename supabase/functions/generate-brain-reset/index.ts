@@ -26,12 +26,9 @@ function extractMarkdown(block: any): string {
 
 // Normalize the server link to get the base API URL
 function normalizeServerLink(serverLink: string): string {
-  // Remove trailing slashes and ensure it ends with /api/v1
   let url = serverLink.trim().replace(/\/+$/, '');
   
-  // If it doesn't already have /api/v1, add it
   if (!url.endsWith('/api/v1')) {
-    // Check if it has /api but not /v1
     if (url.endsWith('/api')) {
       url += '/v1';
     } else {
@@ -42,8 +39,8 @@ function normalizeServerLink(serverLink: string): string {
   return url;
 }
 
-// Fetch daily notes for a date range using the server link
-async function fetchDailyNotes(apiBase: string, days: number): Promise<DailyNote[]> {
+// Fetch daily notes for a date range
+async function fetchDailyNotes(apiBase: string, apiToken: string, days: number): Promise<DailyNote[]> {
   const notes: DailyNote[] = [];
   const today = new Date();
   
@@ -58,6 +55,7 @@ async function fetchDailyNotes(apiBase: string, days: number): Promise<DailyNote
       const response = await fetch(`${apiBase}/blocks?date=${dateStr}`, {
         method: 'GET',
         headers: {
+          'Authorization': `Bearer ${apiToken}`,
           'Accept': 'application/json',
         },
       });
@@ -98,7 +96,6 @@ async function generateReflection(notes: DailyNote[], days: number): Promise<str
     .map(n => `## ${n.date}\n${n.content}`)
     .join('\n\n---\n\n');
   
-  // Adjust the prompt based on the period
   const periodLabel = days === 1 ? "daily" : days <= 7 ? "weekly" : days <= 14 ? "bi-weekly" : "monthly";
   
   console.log(`Generating AI ${periodLabel} reflection...`);
@@ -160,42 +157,74 @@ Be concise but insightful. Use bullet points. Focus on what matters.`
 }
 
 // Create a new document in Craft with the reflection
-async function createCraftDocument(apiBase: string, content: string): Promise<string> {
+async function createCraftDocument(apiBase: string, apiToken: string, content: string): Promise<string> {
   console.log("Creating document in Craft...");
   
-  // Try creating without date positioning (more reliable for server links)
+  // Use the correct Craft API format with blocks array
   const response = await fetch(`${apiBase}/blocks`, {
     method: 'POST',
     headers: {
+      'Authorization': `Bearer ${apiToken}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      markdown: content
+      blocks: [
+        {
+          type: "textBlock",
+          style: "body",
+          content: content
+        }
+      ]
     }),
   });
   
   if (!response.ok) {
     const errorText = await response.text();
     console.error("Craft API error:", errorText);
-    throw new Error(`Failed to create document: ${response.status}`);
+    
+    // Fallback: try with markdown format
+    console.log("Trying with markdown format...");
+    const fallbackResponse = await fetch(`${apiBase}/blocks`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        blocks: [
+          {
+            markdown: content
+          }
+        ]
+      }),
+    });
+    
+    if (!fallbackResponse.ok) {
+      const fallbackError = await fallbackResponse.text();
+      console.error("Craft API fallback error:", fallbackError);
+      throw new Error(`Failed to create document: ${fallbackResponse.status}`);
+    }
+    
+    const fallbackResult = await fallbackResponse.json();
+    console.log("Document created (fallback):", fallbackResult);
+    const blockId = fallbackResult.items?.[0]?.id || fallbackResult.id;
+    return `craftdocs://open?blockId=${blockId}`;
   }
   
   const result = await response.json();
   console.log("Document created:", result);
   
-  // Return a deep link to open Craft
   const blockId = result.items?.[0]?.id || result.id;
   return `craftdocs://open?blockId=${blockId}`;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
   
   try {
-    const { serverLink, days } = await req.json();
+    const { serverLink, apiToken, days } = await req.json();
     
     if (!serverLink) {
       return new Response(
@@ -204,7 +233,13 @@ serve(async (req) => {
       );
     }
     
-    // Validate server link format
+    if (!apiToken) {
+      return new Response(
+        JSON.stringify({ error: "Craft API token is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     if (!serverLink.includes("connect.craft.do/links/")) {
       return new Response(
         JSON.stringify({ error: "Invalid Craft Connect link format" }),
@@ -218,7 +253,7 @@ serve(async (req) => {
     console.log(`Starting brain reset for ${periodDays} days using ${apiBase}...`);
     
     // Step 1: Fetch daily notes
-    const notes = await fetchDailyNotes(apiBase, periodDays);
+    const notes = await fetchDailyNotes(apiBase, apiToken, periodDays);
     
     if (notes.length === 0) {
       return new Response(
@@ -233,7 +268,7 @@ serve(async (req) => {
     const reflection = await generateReflection(notes, periodDays);
     
     // Step 3: Create document in Craft
-    const craftUrl = await createCraftDocument(apiBase, reflection);
+    const craftUrl = await createCraftDocument(apiBase, apiToken, reflection);
     
     console.log("Brain reset complete!");
     
