@@ -242,20 +242,42 @@ DOCUMENT STRUCTURE (use exactly this format):
 
 **${periodLabel}**
 
-## 🎯 Key Themes
+## 🧭 Weekly Overview
+
+Based on the notes, assess these three dimensions using filled/empty circles (use 1-5 scale):
+
+**Energy:** ⚡⚡⚡⚪⚪  
+**Focus:** 🎯🎯🎯🎯⚪  
+**Clarity:** 🧠🧠🧠⚪⚪  
+
+## 🎯 What Dominated My Week
 Identify 3–5 dominant themes or focus areas from this period. Be specific and grounded in the actual content.
 
-## ✅ Decisions Made
+## ✅ Decisions I Actually Made
 List concrete decisions, conclusions, or commitments that emerged. Only include what was actually decided.
 
-## 🔄 Open Loops
+## 🔄 Mental Clutter Still Open
 List unresolved topics, pending questions, or items needing follow-up. These are mental weights to acknowledge.
 
-## ⚡ Next Actions
+## ⭐ One Thing That Mattered Most
+
+> This week was really about **[identify the single most important thing from the notes]**.
+
+Everything else revolved around it, whether consciously or not.
+
+## ⚡ Next Week Commitments
 Provide 3–5 actionable, forward-looking steps derived from the content. Be specific and practical.
 
-## 💡 Insights & Patterns
+## 💡 What This Week Is Teaching Me
 Share high-level reflections, behavioral patterns, or notable trends observed across the period.
+
+## 🧘 Weekly Closure
+
+*Complete these to close the week:*
+
+- What I should stop carrying into next week:
+- One thing I want to protect:
+- One intention for the next 7 days:
 
 TONE & STYLE:
 - Calm, reflective, practical
@@ -263,6 +285,9 @@ TONE & STYLE:
 - Concise but meaningful—every line should add value
 - Use bullet points for clarity
 - Avoid repetition across sections
+- For the Weekly Overview, infer energy/focus/clarity from the tone and content of the notes
+- For One Thing That Mattered Most, identify the core thread that everything else connects to
+- Leave Weekly Closure prompts empty for the user to fill in
 - This is a personal thinking tool, not content for others`
         },
         {
