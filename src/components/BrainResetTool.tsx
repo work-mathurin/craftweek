@@ -11,14 +11,13 @@ import { Input } from "@/components/ui/input";
 type State = "idle" | "loading" | "success";
 
 interface SuccessData {
-  craftUrl: string;
   notesProcessed: number;
 }
 
 export function BrainResetTool() {
   const [serverUrl, setServerUrl] = useState("");
   const [token, setToken] = useState("");
-  const [period, setPeriod] = useState<7 | 14>(7);
+  const [period, setPeriod] = useState<number>(7);
   const [state, setState] = useState<State>("idle");
   const [successData, setSuccessData] = useState<SuccessData | null>(null);
 
@@ -48,7 +47,6 @@ export function BrainResetTool() {
       }
 
       setSuccessData({
-        craftUrl: data.craftUrl,
         notesProcessed: data.notesProcessed,
       });
       setState("success");
