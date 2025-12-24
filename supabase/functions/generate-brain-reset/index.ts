@@ -145,7 +145,8 @@ Be concise but insightful. Use bullet points. Focus on what matters.`
 async function createCraftDocument(craftToken: string, content: string): Promise<string> {
   console.log("Creating document in Craft...");
   
-  const response = await fetch(`${CRAFT_API_BASE}/blocks`, {
+  // First, try to create at today's date. If that fails (e.g., trashed), create at root
+  let response = await fetch(`${CRAFT_API_BASE}/blocks`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${craftToken}`,
@@ -160,6 +161,24 @@ async function createCraftDocument(craftToken: string, content: string): Promise
     }),
   });
   
+  // If today's note is trashed or unavailable, try creating without date positioning
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.log("First attempt failed, trying without date position:", errorText);
+    
+    // Try creating as a new document without specific date positioning
+    response = await fetch(`${CRAFT_API_BASE}/blocks`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${craftToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        markdown: content
+      }),
+    });
+  }
+  
   if (!response.ok) {
     const errorText = await response.text();
     console.error("Craft API error:", errorText);
@@ -170,7 +189,6 @@ async function createCraftDocument(craftToken: string, content: string): Promise
   console.log("Document created:", result);
   
   // Return a deep link to open Craft
-  // Since Craft API doesn't return a public URL, we return a craft:// URL
   const blockId = result.items?.[0]?.id || result.id;
   return `craftdocs://open?blockId=${blockId}`;
 }
