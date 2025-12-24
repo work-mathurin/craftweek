@@ -33,9 +33,13 @@ export function BrainResetTool() {
 
     setState("loading");
 
+    // Capture token and clear from state immediately for security
+    const tokenToUse = token.trim();
+    setToken("");
+
     try {
       const { data, error } = await supabase.functions.invoke("generate-brain-reset", {
-        body: { serverUrl: serverUrl.trim(), craftToken: token.trim(), days: period },
+        body: { serverUrl: serverUrl.trim(), craftToken: tokenToUse, days: period },
       });
 
       if (error) {
@@ -52,7 +56,6 @@ export function BrainResetTool() {
       setState("success");
       toast.success("Weekly Brain Reset generated successfully");
     } catch (error) {
-      console.error("Error:", error);
       toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
       setState("idle");
     }

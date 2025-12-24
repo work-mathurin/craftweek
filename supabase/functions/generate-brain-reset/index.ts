@@ -1,9 +1,50 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Allowed origins for CORS - add your production domain here
+const ALLOWED_ORIGINS = [
+  'https://afwjxctaizfmwxflxtxb.lovableproject.com',
+  'http://localhost:8080',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
+function getCorsHeaders(origin: string | null): HeadersInit {
+  const allowedOrigin = origin && ALLOWED_ORIGINS.some(allowed => 
+    origin === allowed || origin.endsWith('.lovableproject.com')
+  ) ? origin : ALLOWED_ORIGINS[0];
+  
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
+// Map internal errors to safe client messages
+function getClientSafeError(error: Error): string {
+  const message = error.message.toLowerCase();
+  
+  if (message.includes('ai service') || message.includes('lovable_api')) {
+    return 'Service temporarily unavailable. Please try again later.';
+  }
+  if (message.includes('rate limit') || message.includes('429')) {
+    return 'Too many requests. Please wait a moment and try again.';
+  }
+  if (message.includes('credits') || message.includes('402')) {
+    return 'AI service quota exceeded. Please try again later.';
+  }
+  if (message.includes('craft') || message.includes('failed to create')) {
+    return 'Unable to connect to Craft. Please check your server URL and token.';
+  }
+  if (message.includes('token') || message.includes('authorization') || message.includes('401')) {
+    return 'Authentication failed. Please check your Craft API token.';
+  }
+  if (message.includes('no daily notes')) {
+    return 'No daily notes found for the selected period.';
+  }
+  
+  return 'An error occurred. Please try again.';
+}
 
 interface DailyNote {
   id: string;
@@ -204,6 +245,9 @@ async function createCraftDocument(apiBase: string, craftToken: string, content:
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('Origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -229,7 +273,7 @@ serve(async (req) => {
     const apiBase = normalizeServerUrl(serverUrl);
     const periodDays = days === 14 ? 14 : 7;
     
-    console.log(`Starting brain reset for ${periodDays} days using ${apiBase}...`);
+    console.log(`Starting brain reset for ${periodDays} days`);
     
     // Step 1: Fetch daily notes
     const notes = await fetchDailyNotes(apiBase, craftToken, periodDays);
@@ -249,7 +293,7 @@ serve(async (req) => {
     // Step 3: Create document in Craft
     const craftUrl = await createCraftDocument(apiBase, craftToken, reflection);
     
-    console.log("Brain reset complete!");
+    console.log("Brain reset complete");
     
     return new Response(
       JSON.stringify({ 
@@ -261,12 +305,19 @@ serve(async (req) => {
     );
     
   } catch (error) {
-    console.error("Error in brain reset:", error);
+    // Log detailed error server-side only
+    console.error("Error in brain reset:", {
+      error: error instanceof Error ? error.stack : error,
+      timestamp: new Date().toISOString(),
+    });
+    
+    // Return safe error message to client
+    const clientError = error instanceof Error 
+      ? getClientSafeError(error) 
+      : 'An error occurred. Please try again.';
     
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "An unexpected error occurred" 
-      }),
+      JSON.stringify({ error: clientError }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
