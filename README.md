@@ -1,73 +1,59 @@
-# Welcome to your Lovable project
+# CraftWeek
 
-## Project info
+From daily notes to weekly clarity.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+CraftWeek is a lightweight reflection tool that transforms Craft daily notes into a structured weekly summary — saved directly inside Craft.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## What does it do?
 
-**Use Lovable**
+CraftWeek analyzes your Craft daily notes over a selected period (7, 14, or 30 days) and generates a structured weekly reflection including:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- Key Themes
+- Decisions Made
+- Open Loops
+- Next Actions
+- Insights & Patterns
 
-Changes made via Lovable will be committed automatically to this repo.
+The result is saved directly into today's Craft daily note.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Why Craft?
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Craft is both the source and the destination:
 
-Follow these steps:
+- Input: Craft daily notes
+- Output: A structured reflection inside Craft
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+No exports. No dashboards. No copy-paste.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## How to try it
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+This project runs on **Lovable**.
 
-**Edit a file directly in GitHub**
+### Steps:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Clone or fork this repository
+2. Connect it to your Lovable account
+3. Run the project
+4. Paste your Craft server link
+5. Select a time period
+6. Click **Generate**
 
-**Use GitHub Codespaces**
+No API keys are required — Lovable provides the infrastructure.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## Built for the Craft Winter Challenge ❄️
 
-This project is built with:
+This project demonstrates how Craft can be used as a reflection engine powered by automation and AI.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## License
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+MIT
