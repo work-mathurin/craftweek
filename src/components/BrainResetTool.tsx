@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TokenInput } from "./TokenInput";
+import { ServerLinkInput } from "./ServerLinkInput";
 import { PeriodToggle } from "./PeriodToggle";
 import { GenerateButton } from "./GenerateButton";
 import { SuccessState } from "./SuccessState";
 import { Brain } from "lucide-react";
 
 type State = "idle" | "loading" | "success";
+type PeriodValue = 1 | 7 | 14 | 30;
 
 interface SuccessData {
   craftUrl: string;
@@ -15,14 +16,20 @@ interface SuccessData {
 }
 
 export function BrainResetTool() {
-  const [token, setToken] = useState("");
-  const [period, setPeriod] = useState<7 | 14>(7);
+  const [serverLink, setServerLink] = useState("");
+  const [period, setPeriod] = useState<PeriodValue>(7);
   const [state, setState] = useState<State>("idle");
   const [successData, setSuccessData] = useState<SuccessData | null>(null);
 
   const handleGenerate = async () => {
-    if (!token.trim()) {
-      toast.error("Please enter your Craft API token");
+    if (!serverLink.trim()) {
+      toast.error("Please enter your Craft server link");
+      return;
+    }
+
+    // Validate the server link format
+    if (!serverLink.includes("connect.craft.do/links/")) {
+      toast.error("Please enter a valid Craft Connect link");
       return;
     }
 
@@ -30,7 +37,7 @@ export function BrainResetTool() {
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-brain-reset", {
-        body: { craftToken: token.trim(), days: period },
+        body: { serverLink: serverLink.trim(), days: period },
       });
 
       if (error) {
@@ -46,7 +53,7 @@ export function BrainResetTool() {
         notesProcessed: data.notesProcessed,
       });
       setState("success");
-      toast.success("Weekly Brain Reset generated successfully");
+      toast.success("Brain Reset generated successfully");
     } catch (error) {
       console.error("Error:", error);
       toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
@@ -79,7 +86,7 @@ export function BrainResetTool() {
           Weekly Brain Reset
         </h1>
         <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
-          Transform your daily notes into a clear weekly reflection
+          Transform your daily notes into a clear reflection
         </p>
       </div>
 
@@ -87,13 +94,16 @@ export function BrainResetTool() {
       <div className="w-full max-w-md space-y-8">
         <div className="space-y-3">
           <label className="text-sm font-medium text-muted-foreground">
-            Craft API Token
+            Craft Server Link
           </label>
-          <TokenInput
-            value={token}
-            onChange={setToken}
+          <ServerLinkInput
+            value={serverLink}
+            onChange={setServerLink}
             disabled={state === "loading"}
           />
+          <p className="text-xs text-muted-foreground/70">
+            Create a Connect link in Craft → Share → Generate Server Link
+          </p>
         </div>
 
         <div className="space-y-3">
@@ -112,7 +122,7 @@ export function BrainResetTool() {
       <GenerateButton
         onClick={handleGenerate}
         isLoading={state === "loading"}
-        disabled={!token.trim()}
+        disabled={!serverLink.trim()}
       />
 
       {/* Subtle hint */}
