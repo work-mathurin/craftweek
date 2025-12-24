@@ -178,18 +178,46 @@ async function fetchDailyNotes(apiBase: string, craftToken: string, days: number
   return notes;
 }
 
+// Format date range for display
+function formatDateRange(notes: DailyNote[], days: number): string {
+  if (notes.length === 0) return '';
+  
+  const sortedNotes = [...notes].sort((a, b) => a.date.localeCompare(b.date));
+  const startDate = new Date(sortedNotes[0].date);
+  const endDate = new Date(sortedNotes[sortedNotes.length - 1].date);
+  
+  const formatOptions: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric' };
+  const yearOptions: Intl.DateTimeFormatOptions = { year: 'numeric' };
+  
+  const startStr = startDate.toLocaleDateString('en-US', formatOptions);
+  const endStr = endDate.toLocaleDateString('en-US', formatOptions);
+  const year = endDate.toLocaleDateString('en-US', yearOptions);
+  
+  // Calculate week number for the end date
+  const startOfYear = new Date(endDate.getFullYear(), 0, 1);
+  const weekNumber = Math.ceil(((endDate.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7);
+  
+  if (days <= 7) {
+    return `Week ${weekNumber} · ${endDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+  }
+  
+  return `${startStr} – ${endStr}, ${year}`;
+}
+
 // Generate weekly reflection using AI
-async function generateReflection(notes: DailyNote[]): Promise<string> {
+async function generateReflection(notes: DailyNote[], days: number): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   
   if (!LOVABLE_API_KEY) {
     throw new Error("AI service not configured");
   }
   
-  const combinedContent = notes
-    .sort((a, b) => a.date.localeCompare(b.date))
+  const sortedNotes = notes.sort((a, b) => a.date.localeCompare(b.date));
+  const combinedContent = sortedNotes
     .map(n => `## ${n.date}\n${n.content}`)
     .join('\n\n---\n\n');
+  
+  const periodLabel = formatDateRange(notes, days);
   
   console.log("Generating AI reflection...");
   
@@ -204,32 +232,42 @@ async function generateReflection(notes: DailyNote[]): Promise<string> {
       messages: [
         {
           role: "system",
-          content: `You are a thoughtful assistant helping a knowledge worker reflect on their week. 
-Analyze their daily notes and create a structured weekly reflection document.
+          content: `You are a calm, thoughtful assistant helping a knowledge worker process their notes into clarity.
 
-Your output should be in Markdown format with these exact sections:
+Create a personal weekly reflection document. This is a ritual for mental clarity, not a report or summary.
+
+DOCUMENT STRUCTURE (use exactly this format):
+
 # Weekly Brain Reset
 
+**${periodLabel}**
+
 ## 🎯 Key Themes
-Identify 3-5 recurring themes, topics, or focus areas from the week.
+Identify 3–5 dominant themes or focus areas from this period. Be specific and grounded in the actual content.
 
 ## ✅ Decisions Made
-List important decisions that were made or conclusions that were reached.
+List concrete decisions, conclusions, or commitments that emerged. Only include what was actually decided.
 
 ## 🔄 Open Loops
-Identify unfinished tasks, pending items, or things that need follow-up.
+List unresolved topics, pending questions, or items needing follow-up. These are mental weights to acknowledge.
 
 ## ⚡ Next Actions
-Suggest 3-5 concrete next actions based on the content.
+Provide 3–5 actionable, forward-looking steps derived from the content. Be specific and practical.
 
 ## 💡 Insights & Patterns
-Share any interesting patterns, insights, or observations about the week.
+Share high-level reflections, behavioral patterns, or notable trends observed across the period.
 
-Be concise but insightful. Use bullet points. Focus on what matters.`
+TONE & STYLE:
+- Calm, reflective, practical
+- No hype, no generic AI language, no filler
+- Concise but meaningful—every line should add value
+- Use bullet points for clarity
+- Avoid repetition across sections
+- This is a personal thinking tool, not content for others`
         },
         {
           role: "user",
-          content: `Here are my daily notes from the past week. Please create a weekly reflection:\n\n${combinedContent}`
+          content: `Here are my daily notes from ${periodLabel}. Create my weekly brain reset reflection:\n\n${combinedContent}`
         }
       ],
     }),
@@ -367,7 +405,7 @@ serve(async (req) => {
     console.log(`Found ${notes.length} daily notes`);
     
     // Step 2: Generate reflection with AI
-    const reflection = await generateReflection(notes);
+    const reflection = await generateReflection(notes, periodDays);
     
     // Step 3: Create document in Craft
     const craftUrl = await createCraftDocument(apiBase, craftToken, reflection);
