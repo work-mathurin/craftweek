@@ -3,6 +3,8 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 // Allowed origins for CORS - add your production domain here
 const ALLOWED_ORIGINS = [
+  'https://craftweek.site',
+  'https://www.craftweek.site',
   'https://afwjxctaizfmwxflxtxb.lovableproject.com',
   'http://localhost:8080',
   'http://localhost:5173',
