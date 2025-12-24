@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 // Allowed origins for CORS - add your production domain here
 const ALLOWED_ORIGINS = [
@@ -7,6 +8,28 @@ const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:3000',
 ];
+
+// Simple rate limiting: track requests per IP
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 10; // max requests per window
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
 
 function getCorsHeaders(origin: string | null): HeadersInit {
   const allowedOrigin = origin && ALLOWED_ORIGINS.some(allowed => 
@@ -42,9 +65,40 @@ function getClientSafeError(error: Error): string {
   if (message.includes('no daily notes')) {
     return 'No daily notes found for the selected period.';
   }
+  if (message.includes('validation')) {
+    return 'Invalid input. Please check your server URL and try again.';
+  }
   
   return 'An error occurred. Please try again.';
 }
+
+// Input validation schema using zod
+const requestSchema = z.object({
+  serverUrl: z.string()
+    .min(1, "Server URL is required")
+    .max(500, "Server URL is too long")
+    .refine((url) => {
+      try {
+        const parsed = new URL(url);
+        // Must be HTTPS and end with .craft.do domain
+        return parsed.protocol === 'https:' && 
+               (parsed.hostname.endsWith('.craft.do') || parsed.hostname === 'craft.do');
+      } catch {
+        return false;
+      }
+    }, "Must be a valid Craft server URL (https://*.craft.do)"),
+  craftToken: z.string()
+    .min(10, "Token is too short")
+    .max(1000, "Token is too long")
+    // Only allow safe characters in tokens
+    .regex(/^[A-Za-z0-9_\-.]+$/, "Token contains invalid characters"),
+  days: z.number()
+    .int()
+    .min(1)
+    .max(30)
+    .optional()
+    .default(7),
+});
 
 interface DailyNote {
   id: string;
@@ -52,7 +106,7 @@ interface DailyNote {
   content: string;
 }
 
-// Extract the API base URL from user-provided server URL
+// Extract the API base URL from validated server URL
 function normalizeServerUrl(serverUrl: string): string {
   let url = serverUrl.trim();
   // Remove trailing slashes
@@ -65,11 +119,14 @@ function normalizeServerUrl(serverUrl: string): string {
 }
 
 // Extract markdown content from Craft block structure
-function extractMarkdown(block: any): string {
-  let content = block.markdown || '';
+function extractMarkdown(block: unknown): string {
+  if (!block || typeof block !== 'object') return '';
   
-  if (block.content && Array.isArray(block.content)) {
-    for (const child of block.content) {
+  const blockObj = block as Record<string, unknown>;
+  let content = typeof blockObj.markdown === 'string' ? blockObj.markdown : '';
+  
+  if (Array.isArray(blockObj.content)) {
+    for (const child of blockObj.content) {
       content += '\n' + extractMarkdown(child);
     }
   }
@@ -88,9 +145,9 @@ async function fetchDailyNotes(apiBase: string, craftToken: string, days: number
     const dateStr = date.toISOString().split('T')[0];
     
     try {
-      console.log(`Fetching daily note for ${dateStr}...`);
+      console.log(`Fetching daily note for ${dateStr}`);
       
-      const response = await fetch(`${apiBase}/blocks?date=${dateStr}`, {
+      const response = await fetch(`${apiBase}/blocks?date=${encodeURIComponent(dateStr)}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${craftToken}`,
@@ -104,7 +161,7 @@ async function fetchDailyNotes(apiBase: string, craftToken: string, days: number
         
         if (content.trim()) {
           notes.push({
-            id: data.id,
+            id: typeof data.id === 'string' ? data.id : '',
             date: dateStr,
             content: content.trim(),
           });
@@ -237,11 +294,11 @@ async function createCraftDocument(apiBase: string, craftToken: string, content:
   }
   
   const result = await response.json();
-  console.log("Document created:", result);
+  console.log("Document created successfully");
   
   // Return a deep link to open Craft
   const blockId = result.items?.[0]?.id || result.id;
-  return `craftdocs://open?blockId=${blockId}`;
+  return `craftdocs://open?blockId=${encodeURIComponent(blockId)}`;
 }
 
 serve(async (req) => {
@@ -253,25 +310,47 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
   
+  // Get client IP for rate limiting
+  const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                   req.headers.get('cf-connecting-ip') || 
+                   'unknown';
+  
+  // Check rate limit
+  if (isRateLimited(clientIP)) {
+    console.log(`Rate limit exceeded for IP: ${clientIP}`);
+    return new Response(
+      JSON.stringify({ error: "Too many requests. Please wait a moment and try again." }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  
+  // Validate required headers
+  const apiKey = req.headers.get('apikey');
+  if (!apiKey) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  
   try {
-    const { serverUrl, craftToken, days } = await req.json();
+    // Parse and validate input
+    const rawBody = await req.json();
+    const validationResult = requestSchema.safeParse(rawBody);
     
-    if (!serverUrl) {
+    if (!validationResult.success) {
+      const errorMessages = validationResult.error.errors.map(e => e.message).join(', ');
+      console.log(`Validation failed: ${errorMessages}`);
       return new Response(
-        JSON.stringify({ error: "Craft server URL is required" }),
+        JSON.stringify({ error: "Invalid input. Please check your server URL and token." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    if (!craftToken) {
-      return new Response(
-        JSON.stringify({ error: "Craft API token is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const { serverUrl, craftToken, days } = validationResult.data;
     
     const apiBase = normalizeServerUrl(serverUrl);
-    const periodDays = days === 14 ? 14 : 7;
+    const periodDays = [7, 14, 30].includes(days) ? days : 7;
     
     console.log(`Starting brain reset for ${periodDays} days`);
     
