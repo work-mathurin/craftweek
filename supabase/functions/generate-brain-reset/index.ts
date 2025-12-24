@@ -160,46 +160,75 @@ Be concise but insightful. Use bullet points. Focus on what matters.`
 async function createCraftDocument(
   apiBase: string,
   apiToken: string,
-  markdown: string,
+  markdownContent: string,
   targetDate: string
 ): Promise<string> {
   console.log("Creating document in Craft...", { targetDate });
 
-  // Craft API expects either { markdown, position } or { blocks, position }.
-  // We use the markdown variant and always provide a date position.
-  const tryCreate = async (date: string) => {
-    const res = await fetch(`${apiBase}/blocks`, {
+  // Split markdown into lines and create text blocks for each paragraph/section
+  const lines = markdownContent.split('\n').filter(line => line.trim());
+  
+  // Create blocks with proper "type": "text" structure
+  const blocks = lines.map(line => ({
+    type: "text" as const,
+    content: line,
+  }));
+
+  // Try creating with blocks array first (simpler format without position)
+  const tryCreate = async () => {
+    // First attempt: simple blocks array
+    let res = await fetch(`${apiBase}/blocks`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        markdown,
-        position: {
-          position: "end",
-          date,
-        },
-      }),
+      body: JSON.stringify({ blocks }),
     });
+
+    if (!res.ok) {
+      const err1 = await res.text();
+      console.error("Craft API error (blocks array):", err1);
+
+      // Second attempt: with position using datePosition
+      res = await fetch(`${apiBase}/blocks`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          blocks,
+          position: { type: "datePosition", date: targetDate },
+        }),
+      });
+    }
+
+    if (!res.ok) {
+      const err2 = await res.text();
+      console.error("Craft API error (datePosition):", err2);
+
+      // Third attempt: single text block
+      res = await fetch(`${apiBase}/blocks`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          blocks: [{ type: "text", content: markdownContent }],
+        }),
+      });
+    }
 
     return res;
   };
 
-  // Prefer inserting into the most recent day that we actually found content for.
-  let response = await tryCreate(targetDate);
+  const response = await tryCreate();
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Craft API error (targetDate):", errorText);
-
-    // Fallback to "today" (Craft accepts this) in case the found date can't be used.
-    response = await tryCreate("today");
-  }
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Craft API error (today fallback):", errorText);
+    console.error("Craft API final error:", errorText);
     throw new Error(`Failed to create document: ${response.status}`);
   }
 
