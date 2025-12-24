@@ -2,18 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-/* CraftWeek - Clean, calm productivity design system */
+/* CraftWeek - Clean, minimal design inspired by bereach */
 
 @layer base {
   :root {
-    /* Light, clean foundation */
-    --background: 0 0% 100%;
+    /* Light gray foundation */
+    --background: 220 14% 96%;
     --foreground: 222 47% 11%;
 
     /* Cards & surfaces */
-    --card: 210 40% 98%;
+    --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
@@ -24,10 +24,10 @@
     --primary-foreground: 0 0% 100%;
 
     /* Muted surfaces */
-    --secondary: 210 40% 96%;
+    --secondary: 220 14% 92%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 210 40% 96%;
+    --muted: 220 14% 92%;
     --muted-foreground: 215 16% 47%;
 
     --accent: 225 73% 57%;
@@ -37,24 +37,25 @@
     --destructive-foreground: 0 0% 100%;
 
     /* Borders & inputs */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
+    --border: 220 13% 91%;
+    --input: 0 0% 100%;
     --ring: 225 73% 57%;
 
-    --radius: 0.75rem;
+    --radius: 9999px;
 
     /* Custom tokens */
-    --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-soft: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-input: 0 1px 3px 0 rgb(0 0 0 / 0.05);
 
     /* Sidebar (required by shadcn) */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
     --sidebar-primary: 225 73% 57%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent: 220 14% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
+    --sidebar-border: 220 13% 91%;
     --sidebar-ring: 225 73% 57%;
   }
 }
@@ -83,6 +84,10 @@
     box-shadow: var(--shadow-card);
   }
 
+  .shadow-input {
+    box-shadow: var(--shadow-input);
+  }
+
   .animate-fade-in {
     animation: fade-in 0.5s ease-out forwards;
   }
@@ -98,18 +103,20 @@
     }
   }
 
-  .animate-fade-in-delay-1 {
-    animation: fade-in 0.5s ease-out 0.1s forwards;
-    opacity: 0;
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
   }
 
-  .animate-fade-in-delay-2 {
-    animation: fade-in 0.5s ease-out 0.2s forwards;
-    opacity: 0;
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
   }
 
-  .animate-fade-in-delay-3 {
-    animation: fade-in 0.5s ease-out 0.3s forwards;
-    opacity: 0;
+  .animate-float-delayed {
+    animation: float 6s ease-in-out 1s infinite;
   }
 }
