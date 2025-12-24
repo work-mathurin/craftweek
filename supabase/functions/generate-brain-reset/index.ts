@@ -9,6 +9,15 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
 ];
 
+// Check if origin is allowed (includes lovable preview domains)
+function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (origin.endsWith('.lovableproject.com')) return true;
+  if (origin.endsWith('.lovable.app')) return true;
+  return false;
+}
+
 // Simple rate limiting: track requests per IP
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
@@ -32,9 +41,7 @@ function isRateLimited(ip: string): boolean {
 }
 
 function getCorsHeaders(origin: string | null): HeadersInit {
-  const allowedOrigin = origin && ALLOWED_ORIGINS.some(allowed => 
-    origin === allowed || origin.endsWith('.lovableproject.com')
-  ) ? origin : ALLOWED_ORIGINS[0];
+  const allowedOrigin = isAllowedOrigin(origin) ? origin! : ALLOWED_ORIGINS[0];
   
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
