@@ -5,7 +5,7 @@ import { TokenInput } from "./TokenInput";
 import { PeriodToggle } from "./PeriodToggle";
 import { GenerateButton } from "./GenerateButton";
 import { SuccessState } from "./SuccessState";
-import { Brain, Link } from "lucide-react";
+import { Link } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 type State = "idle" | "loading" | "success";
@@ -68,77 +68,64 @@ export function BrainResetTool() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-12">
-      {/* Icon */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse-slow" />
-        <div className="relative w-24 h-24 rounded-full bg-card flex items-center justify-center border border-border/50 animate-float">
-          <Brain className="h-12 w-12 text-primary" />
-        </div>
-      </div>
+    <div className="flex flex-col items-center gap-8">
+      {/* Form Card */}
+      <div className="w-full bg-card rounded-2xl p-8 shadow-card">
+        <div className="space-y-6">
+          {/* Server URL Input */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Craft Server Link
+            </label>
+            <div className="relative">
+              <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="url"
+                placeholder="https://connect.craft.do/links/..."
+                value={serverUrl}
+                onChange={(e) => setServerUrl(e.target.value)}
+                disabled={state === "loading"}
+                className="pl-10 h-12 bg-background border-border focus:border-primary focus:ring-primary/20 placeholder:text-muted-foreground/50"
+              />
+            </div>
+          </div>
 
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-foreground">
-          Weekly Brain Reset
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
-          Transform your daily notes into a clear weekly reflection
-        </p>
-      </div>
-
-      {/* Form */}
-      <div className="w-full max-w-md space-y-6">
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-muted-foreground">
-            Craft Server Link
-          </label>
-          <div className="relative">
-            <Link className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="url"
-              placeholder="https://connect.craft.do/links/..."
-              value={serverUrl}
-              onChange={(e) => setServerUrl(e.target.value)}
+          {/* Token Input */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Craft API Token
+            </label>
+            <TokenInput
+              value={token}
+              onChange={setToken}
               disabled={state === "loading"}
-              className="pl-12 h-14 text-lg bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 placeholder:text-muted-foreground/50"
+            />
+          </div>
+
+          {/* Period Toggle */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground text-center block">
+              Period
+            </label>
+            <PeriodToggle
+              value={period}
+              onChange={setPeriod}
+              disabled={state === "loading"}
             />
           </div>
         </div>
-
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-muted-foreground">
-            Craft API Token
-          </label>
-          <TokenInput
-            value={token}
-            onChange={setToken}
-            disabled={state === "loading"}
-          />
-        </div>
-
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-muted-foreground text-center block">
-            Period
-          </label>
-          <PeriodToggle
-            value={period}
-            onChange={setPeriod}
-            disabled={state === "loading"}
-          />
-        </div>
       </div>
 
-      {/* Action */}
+      {/* Action Button */}
       <GenerateButton
         onClick={handleGenerate}
         isLoading={state === "loading"}
         disabled={!serverUrl.trim() || !token.trim()}
       />
 
-      {/* Subtle hint */}
+      {/* Loading hint */}
       {state === "loading" && (
-        <p className="text-sm text-muted-foreground animate-pulse">
+        <p className="text-sm text-muted-foreground">
           Fetching notes and generating reflection...
         </p>
       )}

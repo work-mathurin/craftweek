@@ -2,60 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* Weekly Brain Reset - Calm, intentional design system */
+/* CraftWeek - Clean, calm productivity design system */
 
 @layer base {
   :root {
-    /* Deep navy foundation */
-    --background: 243 55% 17%;
-    --foreground: 240 20% 95%;
+    /* Light, clean foundation */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
 
     /* Cards & surfaces */
-    --card: 243 45% 20%;
-    --card-foreground: 240 20% 95%;
+    --card: 210 40% 98%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 243 45% 22%;
-    --popover-foreground: 240 20% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Electric indigo accent */
-    --primary: 243 85% 59%;
+    /* Royal blue accent */
+    --primary: 225 73% 57%;
     --primary-foreground: 0 0% 100%;
 
     /* Muted surfaces */
-    --secondary: 243 35% 25%;
-    --secondary-foreground: 240 20% 85%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 243 30% 22%;
-    --muted-foreground: 240 15% 60%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 243 60% 50%;
+    --accent: 225 73% 57%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
     /* Borders & inputs */
-    --border: 243 30% 28%;
-    --input: 243 35% 25%;
-    --ring: 243 85% 59%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 225 73% 57%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
     /* Custom tokens */
-    --glow-primary: 0 0 60px hsl(243 85% 59% / 0.3);
-    --glow-intense: 0 0 100px hsl(243 85% 59% / 0.4);
+    --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 
-    /* Sidebar (unused but required) */
-    --sidebar-background: 243 55% 17%;
-    --sidebar-foreground: 240 20% 95%;
-    --sidebar-primary: 243 85% 59%;
+    /* Sidebar (required by shadcn) */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 225 73% 57%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 243 35% 25%;
-    --sidebar-accent-foreground: 240 20% 95%;
-    --sidebar-border: 243 30% 28%;
-    --sidebar-ring: 243 85% 59%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 225 73% 57%;
   }
 }
 
@@ -70,46 +70,46 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
   }
 }
 
 @layer utilities {
-  .glow-primary {
-    box-shadow: var(--glow-primary);
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
   }
 
-  .glow-intense {
-    box-shadow: var(--glow-intense);
+  .shadow-card {
+    box-shadow: var(--shadow-card);
   }
 
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary;
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
   }
 
-  .animate-pulse-slow {
-    animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
-  @keyframes pulse-slow {
-    0%, 100% {
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
       opacity: 1;
-    }
-    50% {
-      opacity: 0.6;
-    }
-  }
-
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%, 100% {
       transform: translateY(0);
     }
-    50% {
-      transform: translateY(-10px);
-    }
+  }
+
+  .animate-fade-in-delay-1 {
+    animation: fade-in 0.5s ease-out 0.1s forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-in-delay-2 {
+    animation: fade-in 0.5s ease-out 0.2s forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-in-delay-3 {
+    animation: fade-in 0.5s ease-out 0.3s forwards;
+    opacity: 0;
   }
 }
