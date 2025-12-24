@@ -4,6 +4,8 @@ From daily notes to weekly clarity.
 
 CraftWeek is a lightweight reflection tool that transforms Craft daily notes into a structured weekly summary — saved directly inside Craft.
 
+<img width="841" height="412" alt="Capture d&#39;écran 2025-12-24 051647" src="https://github.com/user-attachments/assets/034e7a2c-d835-4400-be5a-028425df326a" />
+
 ---
 
 ## What does it do?
